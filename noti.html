@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" />
+    <title>2-7 공지</title>
+    <link href="output.css" rel="stylesheet">
+</head>
+<script>
+    let getList;
+    let currentId;
+
+    // 공지사항 등록(업로드)
+    function createNoti() {
+        console.log("createNoti()");
+        let isError = false;
+        //Object 변수에 공지사항 내용, 시작 날짜, 종료 날짜 저장
+        const json = {
+            noti: document.getElementById('noti').value,
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value,
+        };
+
+        // POST 요청 정의
+        const data = {
+            method: 'POST',
+            body: JSON.stringify(json),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+        // 공지사항 내용이 비어있을 경우 오류 출력 및 함수 실행 취소
+        if (!json.noti) {
+            document.getElementById("notiError").style.display = "block";
+            setTimeout(() => {
+                document.getElementById("notiError").style.display = "none";
+            }, 3000);
+            isError = true;
+        }
+
+        if (isError) return false;
+
+        // 공지사항 등록 요청 보내기
+        fetch(`/notis/post`, data)
+            .then(response => response.json())
+            .then(response => {
+                console.log(response);
+            })
+            .catch(error => console.error('Error:', error));
+        getNoti(); // 공지사항 등록 후 불러오기
+        return false;
+    }
+
+    // 공지사항 불러오기
+    function getNoti() {
+        console.log("getNoti()");
+        // 공지사항 불러오기 요청 보내기
+        fetch('/notis')
+            .then(response => response.json())
+            .then(response => {
+                getList = response;
+                let text = ``;
+                // 불러온 JSON 데이터를 형식에 맞게 변경
+                response.forEach((t) => {
+                    let temp = `
+<div id="${t._id}" class="border-grey-100 border-2 m-1 rounded-xl p-1" onclick="openModal('${t._id}')">
+    <h5>ID: ${t._id}</h5>
+    <h5>공지사항: ${t.noti}</h5>
+    <h5>시작 날짜: ${t.startDate}</h5>
+    <h5>종료 날짜: ${t.endDate}</h5>
+</div>`
+                    text += temp;
+                })
+                document.getElementById('getNoti').innerHTML = text; // 공지사항을 웹페이지에 나타내기
+            })
+            .catch(error => console.error("Error:", error));
+        return false;
+    }
+
+    // 불러온 공지사항 클릭 시 모달창 열기
+    function openModal(id) {
+        console.log("openModal()");
+        currentId = id;
+        console.log(getList);
+        let editDeleteList = getList.find(item => item._id === id); // 해당하는 ID를 가진 데이터 찾기
+        // 모달창에 선택한 데이터 표시
+        document.getElementById('notiEdit').value = editDeleteList.noti;
+        document.getElementById('startDateEdit').value = editDeleteList.startDate;
+        document.getElementById('endDateEdit').value = editDeleteList.endDate;
+        // 모달창 표시
+        const modal = document.getElementById('modal');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100');
+    }
+
+    //모달창 닫기
+    function closeModal() {
+        console.log("closeModal()");
+        const modal = document.getElementById('modal');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.classList.remove('opacity-100');
+    }
+
+    // 모달창에서 버튼 클릭 시 재확인 모달창 열기
+    function openConfirmModal(type) {
+        console.log("openConfirmModal()");
+
+        // 공지사항 내용이 비어있을 경우 오류 출력 및 함수 실행 취소
+        if (!document.getElementById('notiEdit').value) {
+            document.getElementById("notiErrorEdit").style.display = "block";
+            setTimeout(() => {
+                document.getElementById("notiErrorEdit").style.display = "none";
+            }, 3000);
+            return false;
+        }
+        const confirmModal = document.getElementById('confirmModal');
+        // 수정 버튼을 눌렀을 때와 삭제 버튼을 눌렀을 때를 구분
+        document.getElementById('confirmModal-title').innerHTML = type === "edit" ? "정말로 수정하시겠습니까? 이 행동은 되돌릴 수 없습니다." : "정말로 삭제하시겠습니까? 이 행동은 되돌릴 수 없습니다.";
+        document.getElementById('modalConfirm').onclick = type === "edit" ? editNoti : deleteNoti;
+        // 재확인 모달창 표시
+        confirmModal.classList.remove('opacity-0', 'pointer-events-none');
+        confirmModal.classList.add('opacity-100');
+    }
+
+    // 재확인 모달창 닫기
+    function confirmModalCancel() {
+        console.log("confirmModalCancel()");
+        const confirmModal = document.getElementById('confirmModal');
+        confirmModal.classList.add('opacity-0', 'pointer-events-none');
+        confirmModal.classList.remove('opacity-100');
+    }
+
+    // 공지사항 수정
+    function editNoti() {
+        console.log("editNoti()");
+        //Object 변수에 수정할 공지사항 내용, 시작 날짜, 종료 날짜 저장
+        const json = {
+            noti: document.getElementById('notiEdit').value,
+            startDate: document.getElementById('startDateEdit').value,
+            endDate: document.getElementById('endDateEdit').value,
+        };
+        console.log(json);
+
+        // PUT 요청 정의
+        const data = {
+            method: 'PUT',
+            body: JSON.stringify(json),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        // 공지사항 수정 요청 보내기
+        fetch(`/notis/${currentId}`, data)
+            .then(response => response.json())
+            .then(response => {
+                console.log(response);
+                closeModal(); // 모달창 닫기
+                getNoti(); // 업데이트된 데이터 목록을 다시 불러옴
+            })
+            .catch(error => console.error('Error:', error));
+        confirmModalCancel(); // 재확인 모달창 닫기
+        return false;
+    }
+
+    // 공지사항 삭제
+    function deleteNoti() {
+        console.log("deleteNoti()");
+
+        // DELETE 요청 정의
+        const data = {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        // DELETE 요청 보내기
+        fetch(`/notis/${currentId}`, data)
+            .then(response => response.json())
+            .then(response => {
+                console.log(response);
+                closeModal(); // 모달창 닫기
+                getNoti(); // 업데이트된 데이터 목록을 다시 불러옴
+            })
+            .catch(error => console.error('Error:', error));
+        confirmModalCancel(); // 재확인 모달창 닫기
+        return false;
+    }
+</script>
+<body class="text-slate-900 bg-slate-50 px-2 py-4">
+<header>
+    <!-- 웹페이지 타이틀 -->
+    <h1 class="text-2xl font-bold text-center">
+        2-7 공지
+    </h1>
+</header>
+<div class="flex flex-col lg:flex-row lg:justify-between">
+    <form onsubmit="return createNoti()" class="lg:basis-1/2">
+        <div class="border border-slate-100 shadow-xl hover:shadow-2xl ease-in-out duration-500 rounded-md bg-white px-3 py-4 m-4 bg-opacity-70 hover:bg-opacity-100 transition-all">
+            <!-- 공지사항 등록 입력란 -->
+            <h2 class="font-semibold text-xl text-center pb-1 mb-3 border-b border-slate-300 border-dashed">공지사항 등록하기</h2>
+            <!-- 공지사항 입력란 -->
+            <div class="mb-4 last:mb-0">
+                <h3 class="flex items-center mb-1">
+                    <label class="text-sm font-semibold">공지사항</label>
+                </h3>
+                <textarea class="config border rounded-sm p-2 w-full h-24 text-xs" placeholder="공지사항: 단톡에 전송될 메세지 입력&#13;&#10;시작·종료 날짜: 메세지가 전송될 기간 입력" name="noti" id="noti"></textarea>
+            </div>
+            <!-- 시작 날짜 입력락 -->
+            <div class="mb-4 last:mb-0">
+                <h3 class="flex items-center mb-1">
+                    <label class="text-sm font-semibold">시작 날짜</label>
+                </h3>
+                <input type="date" id="startDate" max="2025-03-01" min="2024-03-02" name="startDate">
+            </div>
+            <!-- 종료 날짜 입력락 -->
+            <div class="mb-4 last:mb-0">
+                <h3 class="flex items-center mb-1">
+                    <label class="text-sm font-semibold">종료 날짜</label>
+                </h3>
+                <input type="date" id="endDate" max="2025-03-01" min="2024-03-02" name="endDate">
+            </div>
+            <!-- 등록 버튼 -->
+            <input type="submit" class="bg-white text-slate-900 border border-slate-200 shadow-xl hover:bg-gray-50 ease-in-out duration-200 rounded-md px-4 w-full" value="등록">
+            <!-- 공지사항 미입력 시 띄우기 -->
+            <p id="notiError" class="text-red-600 text-center mt-2" style="display: none">공지사항을 입력해주세요</p>
+        </div>
+    </form>
+    <form onsubmit="return getNoti()" class="lg:basis-1/2">
+        <div class="border border-slate-100 shadow-xl hover:shadow-2xl ease-in-out duration-500 rounded-md bg-white px-3 py-4 m-4 bg-opacity-70 hover:bg-opacity-100 transition-all">
+            <!-- 공지사항 불러오기 -->
+            <h2 class="font-semibold text-xl text-center pb-1 mb-3 border-b border-slate-300 border-dashed">공지사항 불러오기</h2>
+            <input type="submit" value="데이터 불러오기" class="bg-white text-slate-900 border border-slate-200 shadow-xl hover:bg-gray-50 ease-in-out duration-200 rounded-md px-4 w-full">
+            <!-- Script에서 불러온 데이터가 표시될 공간 -->
+            <div class="mb-4 last:mb-0 mt-5" id="getNoti">
+
+            </div>
+        </div>
+    </form>
+</div>
+<!-- 모달창 -->
+<div id="modal" class="relative z-10 opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">공지 수정·삭제</h3>
+                            <div class="mt-2">
+                                <div class="mb-4 last:mb-0">
+                                    <h3 class="flex items-center mb-1">
+                                        <label class="text-sm font-semibold">공지사항</label>
+                                    </h3>
+                                    <textarea class="config border rounded-sm p-2 w-full h-24 text-xs" name="notiEdit" id="notiEdit"></textarea>
+                                </div>
+                                <div class="mb-4 last:mb-0">
+                                    <h3 class="flex items-center mb-1">
+                                        <label class="text-sm font-semibold">시작 날짜</label>
+                                    </h3>
+                                    <input type="date" id="startDateEdit" max="2025-03-01" min="2024-03-02" value="2024-08-23" name="startDateEdit">
+                                </div>
+                                <div class="mb-4 last:mb-0">
+                                    <h3 class="flex items-center mb-1">
+                                        <label class="text-sm font-semibold">종료 날짜</label>
+                                    </h3>
+                                    <input type="date" id="endDateEdit" max="2025-03-01" min="2024-03-02" value="2024-08-23" name="endDateEdit">
+                                </div>
+
+                                <p style="color: red; display: none" id="notiErrorEdit">공지사항을 입력해주세요</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <!-- 취소, 수정, 삭제 버튼 -->
+                    <button type="button" onclick="openConfirmModal('delete')" class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">삭제</button>
+                    <button type="button" onclick="openConfirmModal('edit')" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0  sm:ml-3 sm:w-auto">수정</button>
+                    <button type="button" onclick="closeModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 재확인 모달창 -->
+<div id="confirmModal" class="relative z-10 opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900" id="confirmModal-title"></h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <!-- 취소, 확인 버튼 -->
+                    <button type="button" id="modalConfirm" class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">확인</button>
+                    <button type="button" id="modalCancel" onclick="confirmModalCancel()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    getNoti() // 페이지 로드 시 공지사항 불러오기
+    // 페이지 로드 시 시작 날짜와 종료 날짜를 오늘로 입력하기
+    const date = new Date();
+    document.getElementById('startDate').value = date.toISOString().split('T')[0];
+    document.getElementById('endDate').value = date.toISOString().split('T')[0];
+</script>
+</html>
