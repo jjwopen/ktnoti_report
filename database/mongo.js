@@ -1,6 +1,6 @@
 const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectId;
-const url = "mongodb+srv://jjwjjw2007:lbsjb528491_M@kakaotalknotidb.iqkc5.mongodb.net/?retryWrites=true&w=majority&appName=KakaotalkNotiDB";
+const url = "MongoDB Private Key";
 const dbName = "KakaotalkNotiDB";
 const client = new MongoClient(url);
 
