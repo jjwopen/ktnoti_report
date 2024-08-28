@@ -312,9 +312,11 @@
 
 <script>
     getNoti() // 페이지 로드 시 공지사항 불러오기
-    // 페이지 로드 시 시작 날짜와 종료 날짜를 오늘로 입력하기
+    // 페이지 로드 시 시작 날짜와 종료 날짜를 오늘과 내일로 입력하기
     const date = new Date();
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate()+1);
     document.getElementById('startDate').value = date.toISOString().split('T')[0];
-    document.getElementById('endDate').value = date.toISOString().split('T')[0];
+    document.getElementById('endDate').value = nextDate.toISOString().split('T')[0];
 </script>
 </html>
