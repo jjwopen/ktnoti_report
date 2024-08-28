@@ -4,6 +4,7 @@ const url = "MongoDB Private Key";
 const dbName = "KakaotalkNotiDB";
 const client = new MongoClient(url);
 
+// DB에 연결하기
 const connectDB = async () => {
     await client.connect();
     console.log('Connected successfully to database');
@@ -13,6 +14,7 @@ const connectDB = async () => {
 
 const db = connectDB();
 
+// DB 데이터 불러오기
 const getNotis = async (req, res) => {
     try {
         const collection = (await db).collection("notis");
@@ -24,6 +26,7 @@ const getNotis = async (req, res) => {
     }
 };
 
+// DB에 데이터 저장하기
 const createNoti = async (req, res) => {
     try {
         const collection = (await db).collection("notis");
@@ -34,6 +37,7 @@ const createNoti = async (req, res) => {
     }
 }
 
+// DB 데이터 수정하기
 const updateNoti = async (req, res) => {
     try {
         const collection = (await db).collection('notis');
@@ -50,6 +54,7 @@ const updateNoti = async (req, res) => {
     }
 }
 
+// DB 데이터 삭제하기
 const deleteNoti = async (req, res) => {
     try {
         const collection = (await db).collection('notis');
